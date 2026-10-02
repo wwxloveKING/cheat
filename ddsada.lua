@@ -1,6 +1,7 @@
 --[[
     SnapSanixHUB | MM2 / MMV FULL
     edited by wwxlove
+    auto platform detection: mobile / pc
 ]]
 
 -- ==========================================================
@@ -18,7 +19,23 @@ local TweenSvc   = game:GetService("TweenService")
 local LP         = Players.LocalPlayer
 local Camera     = workspace.CurrentCamera
 
--- ГЛОБАЛЬНЫЙ ФЛАГ ВЫКЛЮЧЕНИЯ
+-- ==========================================================
+--  PLATFORM DETECTION
+-- ==========================================================
+local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
+local isPC     = UIS.KeyboardEnabled
+
+local UI_SCALE = isMobile and 0.72 or 1
+local UI_POS   = isMobile and UDim2.new(0.12, 0, 0.08, 0)
+                            or  UDim2.new(0.25, 0, 0.052, 0)
+
+local PANIC_SIZE  = isMobile and 40 or 50
+local PANIC_POS   = isMobile and UDim2.new(0, 8, 0, 8) or UDim2.new(0, 10, 0, 10)
+local CLOSE_SIZE  = isMobile and 20 or 22
+
+-- ==========================================================
+--  SHUTDOWN FLAG
+-- ==========================================================
 local SNX_Closed = false
 local SNX_Connections = {}
 local function track(conn) table.insert(SNX_Connections, conn) return conn end
@@ -35,6 +52,8 @@ local function safeIntro()
         sg.ResetOnSpawn = false; sg.DisplayOrder = 9999
         local ok = pcall(function() sg.Parent = parent end)
         if not ok or not sg.Parent then sg.Parent = LP:FindFirstChild("PlayerGui") end
+
+        local scale = isMobile and 0.7 or 1
 
         local bg = Instance.new("Frame", sg)
         bg.Size = UDim2.new(1,0,1,0); bg.BackgroundColor3 = Color3.new(0,0,0)
@@ -54,7 +73,7 @@ local function safeIntro()
         title.Font = Enum.Font.GothamBlack
         title.Text = "SnapSanixHUB"
         title.TextColor3 = Color3.fromRGB(255,255,255)
-        title.TextSize = 60; title.TextTransparency = 1
+        title.TextSize = math.floor(60 * scale); title.TextTransparency = 1
         local tg = Instance.new("UIGradient", title)
         tg.Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, Color3.fromRGB(180,0,255)),
@@ -70,19 +89,29 @@ local function safeIntro()
         sub.Font = Enum.Font.GothamBold
         sub.Text = "edited by wwxlove"
         sub.TextColor3 = Color3.fromRGB(200,120,255)
-        sub.TextSize = 28; sub.TextTransparency = 1
+        sub.TextSize = math.floor(28 * scale); sub.TextTransparency = 1
+
+        local platText = Instance.new("TextLabel", bg)
+        platText.AnchorPoint = Vector2.new(0.5,0.5)
+        platText.Position = UDim2.new(0.5,0,0.5,65)
+        platText.Size = UDim2.new(0,600,0,24)
+        platText.BackgroundTransparency = 1
+        platText.Font = Enum.Font.Gotham
+        platText.Text = isMobile and "📱 Mobile mode" or "💻 PC mode"
+        platText.TextColor3 = Color3.fromRGB(180,180,180)
+        platText.TextSize = math.floor(14 * scale); platText.TextTransparency = 1
 
         local line = Instance.new("Frame", bg)
         line.AnchorPoint = Vector2.new(0.5,0.5)
-        line.Position = UDim2.new(0.5,0,0.5,80)
+        line.Position = UDim2.new(0.5,0,0.5,95)
         line.Size = UDim2.new(0,0,0,2)
         line.BackgroundColor3 = Color3.fromRGB(180,80,255)
         line.BorderSizePixel = 0
 
         local bar = Instance.new("Frame", bg)
         bar.AnchorPoint = Vector2.new(0.5,0.5)
-        bar.Position = UDim2.new(0.5,0,0.5,110)
-        bar.Size = UDim2.new(0,400,0,4)
+        bar.Position = UDim2.new(0.5,0,0.5,125)
+        bar.Size = UDim2.new(0, math.floor(400 * scale), 0, 4)
         bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
         bar.BorderSizePixel = 0
         local fill = Instance.new("Frame", bar)
@@ -107,10 +136,12 @@ local function safeIntro()
         title.Position = UDim2.new(0.5,0,0.5,-20)
         tw(title, 0.6, {TextTransparency=0, Position=UDim2.new(0.5,0,0.5,-40)}); task.wait(0.5)
         tw(sub, 0.4, {TextTransparency=0})
-        tw(line, 0.5, {Size=UDim2.new(0,320,0,2)}); task.wait(0.3)
+        tw(platText, 0.4, {TextTransparency=0})
+        tw(line, 0.5, {Size=UDim2.new(0, math.floor(320*scale), 0, 2)}); task.wait(0.3)
         tw(fill, 1.4, {Size=UDim2.new(1,0,1,0)}); task.wait(1.5)
         tw(cred, 0.4, {TextTransparency=0}); task.wait(1.2)
         tw(title,0.4,{TextTransparency=1}); tw(sub,0.4,{TextTransparency=1})
+        tw(platText,0.4,{TextTransparency=1})
         tw(cred,0.4,{TextTransparency=1}); tw(line,0.4,{BackgroundTransparency=1})
         tw(bar,0.4,{BackgroundTransparency=1}); tw(fill,0.4,{BackgroundTransparency=1})
         tw(bg,0.5,{BackgroundTransparency=1}); task.wait(0.6)
@@ -131,6 +162,44 @@ if not ok or not library then
     warn("[SnapSanixHUB] "..tostring(err)); return
 end
 local Venyx = library.new("SnapSanixHUB | wwxlove", 5013109572)
+
+-- ==========================================================
+--  UI ADAPT (mobile scale)
+-- ==========================================================
+task.spawn(function()
+    task.wait(0.6)
+    pcall(function()
+        local container = Venyx.container and Venyx.container.Main
+        if not container then return end
+
+        if isMobile then
+            container.Size = UDim2.new(0, 511 * UI_SCALE, 0, 428 * UI_SCALE)
+            container.Position = UI_POS
+
+            if container:FindFirstChild("TopBar") then
+                local tb = container.TopBar
+                tb.Size = UDim2.new(1, 0, 0, 38 * UI_SCALE)
+                if tb:FindFirstChild("Title") then
+                    tb.Title.TextSize = math.floor(14 * UI_SCALE)
+                end
+            end
+
+            if container:FindFirstChild("Pages") then
+                container.Pages.Size = UDim2.new(0, 126 * UI_SCALE, 1, -38 * UI_SCALE)
+            end
+
+            for _, obj in ipairs(container:GetDescendants()) do
+                pcall(function()
+                    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                        if obj.TextSize > 10 then
+                            obj.TextSize = math.floor(obj.TextSize * UI_SCALE)
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+end)
 
 -- ==========================================================
 --  STATE
@@ -409,7 +478,7 @@ task.spawn(function()
 end)
 
 -- ==========================================================
---  TP TO PISTOL (улучшенный)
+--  TP TO PISTOL
 -- ==========================================================
 local function isGunName(n)
     n = n:lower()
@@ -482,9 +551,7 @@ local function tpToPistol()
         pcall(function() Venyx:Notify("TP", "Пушка не найдена (0)") end)
         return false
     end
-
     local myH = myHrp(); if not myH then return false end
-
     local bestGun, bestPos, bestDist = nil, nil, math.huge
     for _, g in ipairs(guns) do
         local pos = getObjectPosition(g)
@@ -495,12 +562,10 @@ local function tpToPistol()
             end
         end
     end
-
     if not bestPos then
         pcall(function() Venyx:Notify("TP", "Позиция не найдена ("..#guns..")") end)
         return false
     end
-
     local md = nearestMurdererDistance(bestPos)
     if not S.TPIgnoreMurderer and md <= S.TPSafeDistance then
         pcall(function()
@@ -508,21 +573,17 @@ local function tpToPistol()
         end)
         return false
     end
-
     local okTP = pcall(function()
         myH.CFrame = CFrame.new(bestPos + Vector3.new(0, 3, 0))
         myH.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end)
-
     if okTP then
         pcall(function()
             Venyx:Notify("TP", "OK -> "..bestGun.Name.." | мардер "..math.floor(md).."m")
         end)
         return true
-    else
-        pcall(function() Venyx:Notify("TP", "Ошибка ТП") end)
-        return false
     end
+    return false
 end
 
 local function tpToSheriff()
@@ -967,7 +1028,7 @@ local function setSky(name)
 end
 
 -- ==========================================================
---  CURSOR
+--  CURSOR (dot)
 -- ==========================================================
 local CursorGui, CursorImg
 pcall(function()
@@ -987,11 +1048,12 @@ if not CursorGui then
     CursorGui.ResetOnSpawn = false
     CursorGui.Parent = LP:WaitForChild("PlayerGui")
 end
+local DOT_SIZE = isMobile and 14 or 10
 CursorImg = Instance.new("Frame")
 CursorImg.Name = "Dot"
 CursorImg.BackgroundColor3 = Color3.fromRGB(255, 80, 220)
 CursorImg.BorderSizePixel = 0
-CursorImg.Size = UDim2.new(0, 10, 0, 10)
+CursorImg.Size = UDim2.new(0, DOT_SIZE, 0, DOT_SIZE)
 CursorImg.AnchorPoint = Vector2.new(0.5, 0.5)
 CursorImg.ZIndex = 100000
 CursorImg.Parent = CursorGui
@@ -1056,7 +1118,8 @@ local BindPage   = Venyx:addPage("Keybinds", 5012544693)
 local ThemePage  = Venyx:addPage("Theme", 5012544693)
 
 MainPage:addSection("Info"):addParagraph("SnapSanixHUB", "edited by wwxlove")
-MainPage:addSection("Info"):addParagraph("Build", "MM2 / MMV full")
+MainPage:addSection("Info"):addParagraph("Platform",
+    isMobile and "📱 Mobile" or "💻 PC")
 local ActSec = MainPage:addSection("Actions")
 ActSec:addButton("Rejoin", function()
     game:GetService("TeleportService"):Teleport(game.PlaceId, LP)
@@ -1127,13 +1190,11 @@ FlingNameSec:addTextbox("Player Name", "", function(text, focusLost)
 end)
 FlingNameSec:addButton("Stop Fling", function() stopFling() end)
 
--- TP page (обновлённая)
 local TPSec = TPPage:addSection("К пушке")
 TPSec:addButton("TP to Pistol (safe)", function() tpToPistol() end)
 TPSec:addButton("TP to Sheriff", function() tpToSheriff() end)
 TPSec:addToggle("Ignore Murderer", false, function(v) S.TPIgnoreMurderer = v end)
 TPSec:addSlider("Safe Distance", 15, 5, 100, function(v) S.TPSafeDistance = v end)
-TPSec:addParagraph("Info", "Если мардер ближе Safe Distance — ТП отменится. Включи Ignore Murderer чтобы отключить проверку.")
 local TPPlySec = TPPage:addSection("К игроку")
 TPPlySec:addTextbox("Player Name", "", function(text, focusLost)
     if focusLost and text~="" then
@@ -1230,8 +1291,8 @@ if not PanicGui.Parent then PanicGui.Parent = LP:WaitForChild("PlayerGui") end
 
 local PanicSquare = Instance.new("ImageButton")
 PanicSquare.Name = "CatSquare"
-PanicSquare.Size = UDim2.new(0, 50, 0, 50)
-PanicSquare.Position = UDim2.new(0, 10, 0, 10)
+PanicSquare.Size = UDim2.new(0, PANIC_SIZE, 0, PANIC_SIZE)
+PanicSquare.Position = PANIC_POS
 PanicSquare.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 PanicSquare.BorderSizePixel = 0
 PanicSquare.AutoButtonColor = false
@@ -1308,12 +1369,12 @@ end)
 -- ==========================================================
 local closeBtn = Instance.new("TextButton")
 closeBtn.Name = "SNX_Close"
-closeBtn.Size = UDim2.new(0, 22, 0, 22)
-closeBtn.Position = UDim2.new(1, -28, 0, 8)
+closeBtn.Size = UDim2.new(0, CLOSE_SIZE, 0, CLOSE_SIZE)
+closeBtn.Position = UDim2.new(1, -CLOSE_SIZE - 6, 0, isMobile and 6 or 8)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "✕"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
+closeBtn.TextSize = isMobile and 14 or 16
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.ZIndex = 20
 closeBtn.Parent = Venyx.container.Main.TopBar
@@ -1489,4 +1550,5 @@ yesBtn.MouseButton1Click:Connect(function()
     pcall(function() confirmGui:Destroy() end)
 end)
 
-Venyx:Notify("SnapSanixHUB", "edited by wwxlove")
+Venyx:Notify("SnapSanixHUB",
+    isMobile and "📱 Mobile mode loaded" or "💻 PC mode loaded")
